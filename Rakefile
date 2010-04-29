@@ -1,61 +1,56 @@
 require 'rubygems'
-gem 'hoe', '>= 2.3.0'
-require 'hoe'
+require 'rake'
 
-Hoe.plugin :git
-
-Hoe.spec "loofah" do
-  developer "Mike Dalessio", "mike.dalessio@gmail.com"
-  developer "Bryan Helmkamp", "bryan@brynary.com"
-
-  self.extra_rdoc_files = FileList["*.rdoc"]
-  self.history_file     = "CHANGELOG.rdoc"
-  self.readme_file      = "README.rdoc"
-
-  extra_deps << ["nokogiri", ">= 1.3.3"]
-  extra_dev_deps << ["mocha", ">=0.9"]
-  extra_dev_deps << ["thoughtbot-shoulda", ">=2.10"]
-  extra_dev_deps << ["acts_as_fu", ">=0.0.5"]
-
-  # note: .hoerc should have the following line to omit rails tests and tmp
-  #   exclude: !ruby/regexp /\/tmp\/|\/rails_tests\/|CVS|TAGS|\.(svn|git|DS_Store)/
+begin
+  require 'jeweler'
+  Jeweler::Tasks.new do |gem|
+    gem.name = "loofah"
+    gem.summary = %Q{HTML/XML manipulation and sanitization based on Nokogiri}
+    gem.description = %Q{HTML/XML manipulation and sanitization based on Nokogiri}
+    gem.email = ["mike.dalessio@gmail.com", "bryan@brynary.com"]
+    gem.homepage = "http://loofah.rubyforge.org/"
+    gem.authors = ["Mike Dalessio", "Bryan Helmkamp"]
+    gem.add_dependency "nokogiri", ">= 1.3.3"
+    gem.add_development_dependency "mocha", ">= 0.9"
+    gem.add_development_dependency "thoughtbot-shoulda", ">= 2.10"
+    gem.add_development_dependency "acts_as_fu", ">= 0.0.5"
+    # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
+  end
+  Jeweler::GemcutterTasks.new
+rescue LoadError
+  puts "Jeweler (or a dependency) not available. Install it with: gem install jeweler"
 end
 
-if File.exist?("rails_test/Rakefile")
-  load "rails_test/Rakefile"
-else
-  task :test do
-    puts "----------"
-    puts "-- NOTE: An additional Rails regression test suite is available in source repository"
-    puts "----------"
+require 'rake/testtask'
+Rake::TestTask.new(:test) do |test|
+  test.libs << 'lib' << 'test'
+  test.pattern = 'test/**/test_*.rb'
+  test.verbose = true
+end
+
+begin
+  require 'rcov/rcovtask'
+  Rcov::RcovTask.new do |test|
+    test.libs << 'test'
+    test.pattern = 'test/**/test_*.rb'
+    test.verbose = true
+  end
+rescue LoadError
+  task :rcov do
+    abort "RCov is not available. In order to run rcov, you must: sudo gem install spicycode-rcov"
   end
 end
 
-task :redocs => :fix_css
-task :docs => :fix_css
-task :fix_css do
-  better_css = <<-EOT
-    .method-description pre {
-      margin                    : 1em 0 ;
-    }
+task :test => :check_dependencies
 
-    .method-description ul {
-      padding                   : .5em 0 .5em 2em ;
-    }
+task :default => :test
 
-    .method-description p {
-      margin-top                : .5em ;
-    }
+require 'rake/rdoctask'
+Rake::RDocTask.new do |rdoc|
+  version = File.exist?('VERSION') ? File.read('VERSION') : ""
 
-    #main ul, div#documentation ul {
-      list-style-type           : disc ! IMPORTANT ;
-      list-style-position       : inside ! IMPORTANT ;
-    }
-
-    h2 + ul {
-      margin-top                : 1em;
-    }
-  EOT
-  puts "* fixing css"
-  File.open("doc/rdoc.css", "a") { |f| f.write better_css }
+  rdoc.rdoc_dir = 'rdoc'
+  rdoc.title = "loofah #{version}"
+  rdoc.rdoc_files.include('README*')
+  rdoc.rdoc_files.include('lib/**/*.rb')
 end
